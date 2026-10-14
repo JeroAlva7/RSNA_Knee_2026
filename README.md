@@ -27,3 +27,5 @@ Los datasets, imágenes DICOM, modelos y credenciales no se incluyen en el repos
 El historial completo de experimentos, código y scores se encuentra en:
 
 `experiments/EXPERIMENTS.md`
+
+Mejor Public Score actual: 0.518 (EXP-004)
