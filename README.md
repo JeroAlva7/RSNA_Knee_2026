@@ -11,6 +11,7 @@ Proyecto para la competencia de Kaggle RSNA Knee Abnormality Detection.
 - Primer Kaggle Notebook creado.
 - Baseline inicial enviado a Kaggle.
 - Public Score inicial: 0.500.
+- Mejor Public Score actual: 0.516 (EXP-002)
 
 ## Estructura
 
@@ -20,3 +21,9 @@ Proyecto para la competencia de Kaggle RSNA Knee Abnormality Detection.
 - requirements.txt: dependencias del proyecto.
 
 Los datasets, imágenes DICOM, modelos y credenciales no se incluyen en el repositorio.
+
+## Experimentos
+
+El historial completo de experimentos, código y scores se encuentra en:
+
+`experiments/EXPERIMENTS.md`
