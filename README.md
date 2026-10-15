@@ -11,9 +11,9 @@ Proyecto para la competencia de Kaggle RSNA Knee Abnormality Detection.
 - Pipeline de submissions de Kaggle configurado.
 - Experimentos de metadata, pseudo-labeling y DICOM headers realizados.
 - Public Score inicial: 0.500.
-- Mejor Public Score actual: **0.518 (EXP-004)**.
-- Última submission: **EXP-006 = 0.516**.
-- 5/5 submissions utilizadas en la ventana actual.
+- Mejor Public Score actual: **0.667 (EXP-007)**.
+- Última submission: **EXP-007 = 0.667**.
+- 1/5 submissions utilizadas en la ventana actual.
 
 ## Estructura
 
