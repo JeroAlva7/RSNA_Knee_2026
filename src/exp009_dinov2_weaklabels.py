@@ -907,40 +907,19 @@ def normalized_name(value):
 
 
 def find_weak_labels():
-    candidates = [
-        Path(
-            "/kaggle/input/datasets/"
-            "stevenleehans/"
-            "rsna-knee-llm-report-labels"
-        ),
-        Path(
-            "/kaggle/input/datasets/"
-            "pilkwang/"
-            "rsna-knee-llm-labels"
-        ),
-    ]
-
-    for folder in candidates:
-        if not folder.exists():
-            continue
-
-        csv_files = list(
-            folder.glob("*.csv")
-        )
-
-        if csv_files:
-            # Usar el CSV más grande.
-            return max(
-                csv_files,
-                key=lambda p:
-                p.stat().st_size,
-            )
-
-    raise FileNotFoundError(
-        "No encuentro el dataset "
-        "RSNA Knee LLM Report Labels."
+    weak_path = Path(
+        "/kaggle/input/datasets/"
+        "stevenleehans/"
+        "rsna-knee-llm-report-labels/"
+        "llm_labels_v4_blend.csv"
     )
 
+    if not weak_path.exists():
+        raise FileNotFoundError(
+            "No encuentro llm_labels_v4_blend.csv"
+        )
+
+    return weak_path
 
 def find_uid_column(df):
     for column in df.columns:
@@ -1280,10 +1259,20 @@ def main():
     # SOLO como auditoría.
     # =======================================================
 
+    # =======================================================
+    # Auditoría de weak labels contra los 58 gold.
+    # Los 58 gold NO se usan para entrenar el weak model.
+    # =======================================================
+
     weak_gold = (
         gold[[UID] + TARGETS]
         .merge(
-            weak,
+            weak[
+                [UID]
+                + list(
+                    score_columns.values()
+                )
+            ],
             on=UID,
             how="inner",
             suffixes=(
@@ -1296,17 +1285,49 @@ def main():
     weak_label_auc = {}
 
     for target in TARGETS:
+        gold_column = (
+            f"{target}_gold"
+            if f"{target}_gold"
+            in weak_gold.columns
+            else target
+        )
+
+        source_column = (
+            score_columns[target]
+        )
+
+        weak_column = (
+            f"{source_column}_weak"
+            if f"{source_column}_weak"
+            in weak_gold.columns
+            else source_column
+        )
+
+        y_true = pd.to_numeric(
+            weak_gold[
+                gold_column
+            ],
+            errors="coerce",
+        )
+
+        y_pred = pd.to_numeric(
+            weak_gold[
+                weak_column
+            ],
+            errors="coerce",
+        )
+
+        valid = (
+            y_true.notna()
+            & y_pred.notna()
+        )
+
         weak_label_auc[target] = (
             roc_auc_score(
-                weak_gold[target]
+                y_true[valid]
                 .astype(int),
-                pd.to_numeric(
-                    weak_gold[
-                        score_columns[target]
-                    ],
-                    errors="coerce",
-                )
-                .fillna(0.5),
+                y_pred[valid]
+                .astype(float),
             )
         )
 
@@ -1326,6 +1347,11 @@ def main():
     print("=" * 70)
 
     print(
+        "Weak file:",
+        weak_path.name,
+    )
+
+    print(
         "Macro weak-label AUC:",
         f"{weak_label_macro:.4f}",
     )
@@ -1341,7 +1367,7 @@ def main():
             "Weak labels demasiado débiles. "
             "No continuar."
         )
-
+        
     # =======================================================
     # Excluir por completo los 58 GOLD
     # del weak training.
