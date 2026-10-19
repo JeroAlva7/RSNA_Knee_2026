@@ -1,0 +1,25 @@
+{
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "stevenleehans/rsna-knee-llm-report-labels"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "model_sources": [
+    "metaresearch/dinov2/PyTorch/small/1"
+  ],
+  "machine_shape": "NvidiaTeslaT4",
+  "id": "jerorojasalvarado/rsna-exp010-dinov2-multitask",
+  "title": "RSNA_EXP010_DINOv2_Multitask",
+  "code_file": "rsna-exp010-dinov2-multitask.ipynb"
+}
