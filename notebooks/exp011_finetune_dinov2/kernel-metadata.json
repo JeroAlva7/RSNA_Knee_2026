@@ -1,0 +1,25 @@
+{
+  "id": "jerorojasalvarado/rsna-exp011-finetune-dinov2",
+  "title": "RSNA_EXP011_FineTune_DINOv2",
+  "code_file": "rsna-exp011-finetune-dinov2.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "dataset_sources": [
+    "stevenleehans/rsna-knee-llm-report-labels"
+  ],
+  "model_sources": [
+    "metaresearch/dinov2/PyTorch/small/1"
+  ],
+  "kernel_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}
