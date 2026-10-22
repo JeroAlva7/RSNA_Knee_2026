@@ -1,0 +1,27 @@
+{
+  "model": "EXP010 original multitask-MLP on DINOv2 stats",
+  "weak_train_studies": 4349,
+  "gold_studies": 58,
+  "test_studies": 3,
+  "weak_labels": "llm_labels_v4_blend.csv",
+  "feature_hours_estimate_hidden": 3.2551522737079193,
+  "multitask_weak_validation": [
+    {
+      "seed": 17,
+      "weak_val_bce": 0.5314008593559265,
+      "best_epoch": 6
+    },
+    {
+      "seed": 42,
+      "weak_val_bce": 0.5440912842750549,
+      "best_epoch": 7
+    }
+  ],
+  "baseline_gold_auc": 0.7462714993754496,
+  "candidate_gold_auc": 0.7639577156591666,
+  "candidate_mlp_weight": 0.75,
+  "candidate_gold_gain": 0.017686216283717027,
+  "min_gold_macro_to_submit": 0.79,
+  "min_gain_to_submit": 0.035,
+  "recommended_to_submit": false
+}

@@ -1,59 +1,54 @@
-# EXP-010 — RSNA Knee (objetivo Public Macro AUC 0.800)
+# EXP-010 — DINOv2 con estadísticas por plano y MLP multietiqueta
 
-**Punto de partida:** EXP-009 logró `0.762` Public Score en Kaggle y `0.7461` Macro AUC local sobre 58 estudios gold.
+**Estado:** experimento ejecutado en Kaggle, **no enviado a competición**. El resultado histórico no debe confundirse con el mejor score público del proyecto, que posteriormente alcanzó **0.808 con EXP-011**.
 
-**Limitación:** Ningún código puede garantizar un Public Score de 0.800 o un score final privado de 0.800. El método usa una pequeña validación gold para decidir si vale la pena enviar y no asegura que el test oculto mejore.
+## Idea del experimento
 
-## Idea y diferencias frente a EXP-009
+Se reutiliza la extracción visual de EXP-009 con DINOv2 Small y se agregan, por cada plano anatómico, estadísticas `mean`, `max`, `std` y `median` sin repetir los pases de DINOv2. El brazo adicional es una red MLP para las 12 condiciones, entrenada con 4,349 weak labels. Se compara con EXP-009 sobre 58 gold.
 
-Se utiliza el **mismo recorrido de resonancias y el mismo DINOv2 Small** de EXP-009: 4 ventanas por serie y 2 series por plano. Por cada plano se guardan `mean`, `max`, `std` y `mediana` de los embeddings. Los dos primeros quedan exactamente en el mismo orden que EXP-009: eso permite reconstruir su modelo baseline 0.7461 local sin una segunda pasada de GPU. Las otras estadísticas se usan para entrenar una red neuronal propia multietiqueta sobre 4,349 weak labels. Se elige la época en un 15% de los estudios weak, nunca en las 58 etiquetas gold. La validación gold se utiliza para comparar el candidato y aplicar un umbral conservador.
+## Preparación local desde la raíz del repositorio (PowerShell)
 
-## Preparación local en VS Code (PowerShell)
+```powershell
+.\.venv\Scripts\Activate.ps1
+python build_exp010_notebook.py
+python -m py_compile .\src\exp010_dinov2_multitask.py .\build_exp010_notebook.py
+```
 
-1. Descarga este paquete ZIP y colócalo en `C:\Users\Admin\Documents\RSNA_Knee_2026`.
-2. Abre VS Code en esa carpeta y activa el entorno: `\.venv\Scripts\Activate.ps1` (en PowerShell debe usarse `.\.venv\Scripts\Activate.ps1`).
-3. Extrae el ZIP **en la raíz del repositorio**, conservando `src/exp010_dinov2_multitask.py` y `build_exp010_notebook.py`.
-4. Genera el notebook Kaggle ejecutando `python build_exp010_notebook.py`.
-5. Debes obtener la carpeta `notebooks/exp010_dinov2_multitask` con el `.ipynb` y `kernel-metadata.json`.
-6. Comprueba la sintaxis: `python -m py_compile .\src\exp010_dinov2_multitask.py .\build_exp010_notebook.py`. No requiere descargar resonancias ni ejecutar GPU en Windows.
-7. Guarda el trabajo original: `git add src/exp010_dinov2_multitask.py build_exp010_notebook.py notebooks/exp010_dinov2_multitask/` y `git commit -m "Add original EXP-010 DINOv2 multitask experiment"`, `git push origin main`.
+El generador crea `notebooks/exp010_dinov2_multitask/rsna-exp010-dinov2-multitask.ipynb` y su `kernel-metadata.json`. **No consume GPU en Windows.**
 
-## Ejecución en Kaggle
-
-La ruta más reproducible para crear el nuevo notebook es la API de Kaggle ya configurada:
+## Ejecución de referencia en Kaggle (histórica)
 
 ```powershell
 kaggle kernels push -p ".\notebooks\exp010_dinov2_multitask"
+kaggle kernels status jerorojasalvarado/rsna-exp010-dinov2-multitask
 ```
 
-ATENCIÓN: **este comando inicia una ejecución Kaggle** que puede durar varias horas. No lo pulses sin aceptar el tiempo de cómputo. El `kernel-metadata.json` heredó los 3 inputs y GPU de tu EXP-009: competencia RSNA, modelo DINOv2 Small y LLM Report Labels v4, con Internet desactivado. Confirma visualmente esos inputs y la GPU T4 x2 desde Kaggle.
+**Atención:** `push` sube una nueva versión e inicia una ejecución de Kaggle. Este experimento ya se ejecutó; no repetir el comando solo para documentarlo. Se utilizó GPU T4 e Internet desactivado, con inputs de la competencia RSNA, DINOv2 Small y el dataset auxiliar de stevenleehans.
 
-Notebook esperado: `https://www.kaggle.com/code/jerorojasalvarado/rsna-exp010-dinov2-multitask`
+[Notebook EXP-010 en Kaggle](https://www.kaggle.com/code/jerorojasalvarado/rsna-exp010-dinov2-multitask)
 
-Al terminar, revisa el output:
+## Resultado real de EXP-010 (19 de octubre de 2026)
 
-```
-EXP-009 BASELINE GOLD MACRO AUC: 0.7461   # aprox.
-EXP010 BLEND MLP=0.25 GOLD MACRO AUC: ...
-EXP010 BLEND MLP=0.50 GOLD MACRO AUC: ...
-EXP010 BLEND MLP=0.75 GOLD MACRO AUC: ...
-EXP010 BEST GOLD: ...
-RECOMENDACION SUBMIT: SI / NO
-```
+| Medida | Valor |
+|---|---:|
+| Estudios weak / gold | 4,349 / 58 |
+| Baseline EXP-009 reproducido | 0.7463 |
+| Blend MLP 0.25 | 0.7569 |
+| Blend MLP 0.50 | 0.7616 |
+| **Blend MLP 0.75** | **0.7640** |
+| Aumento sobre baseline | +0.0177 |
+| Umbral gold exigido para recomendar envío | 0.790 |
+| Umbral mínimo de ganancia | +0.035 |
+| **RECOMENDACION SUBMIT** | **NO** |
+| Tiempo de ejecución visible | ~2.56 h |
+| Public Score | **No enviado / no disponible** |
 
-Antes de enviar, confirma que se generó `submission.csv`, `exp010_diagnostics.json` y `exp010_gold_scores.csv`, y que el notebook terminó sin errores.
+Archivos de diagnóstico preservados en [`experiments/results/`](experiments/results/): `exp010_diagnostics.json` y `exp010_gold_scores.csv`.
 
-**Si dice `RECOMENDACION SUBMIT: NO`, NO ENVÍES.** Tu `0.762` de EXP-009 sigue siendo el mejor score público confirmado. Si dice `SI`, es un candidato y puedes evaluar si deseas invertir las ~3–4 horas adicionales de re-ejecución con el test oculto. **Tampoco garantiza superar 0.762 ni llegar a 0.800.**
+El notebook generó un `submission.csv` para los tres estudios de test visibles, pero **no tuvo evaluación pública oficial**. Cuando el filtro local era `FAIL`, el código guardó el baseline para test; por ello ese archivo no constituye una submission mejorada de EXP-010.
 
-## Competencia y tiempo límite
+## Limitaciones y decisión
 
-- Kaggle: `https://www.kaggle.com/competitions/rsna-knee-abnormality-detection`
-- Notebook con GPU: máximo **9 horas por ejecución**.
-- Internet de notebook: desactivado.
-- `submission.csv` en `/kaggle/working/`.
-- Fecha límite: **22 de octubre de 2026 a las 23:59 UTC** (aprox. **17:59 horas de Guadalajara**). No esperes al último minuto.
-- Conserva EXP-009 y selecciona su submission si EXP-010 resulta inferior y las reglas de selección final lo requieren.
+El mejor gold AUC de EXP-010 fue `0.7640`, una ganancia inferior al filtro predefinido. **No se envió.** Más adelante, EXP-011 obtuvo una macro AUC gold de `0.7811` y, tras su submission oficial, un **Public Score de `0.808`**. Esta documentación se conserva para trazabilidad del intento intermedio.
 
-## Originalidad y atribución
-
-Este programa es un diseño propio que reutiliza las funciones que ya desarrollaste en EXP-009. Sus entradas utilizan el modelo preentrenado Meta DINOv2 Small y el dataset auxiliar `stevenleehans/rsna-knee-llm-report-labels`, que deben seguir acreditados en `REFERENCES.md`. No copia una solución de otro competidor.
+Los recursos externos y créditos están documentados en [`REFERENCES.md`](REFERENCES.md).

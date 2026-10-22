@@ -1,35 +1,66 @@
-# EXP-011 | Fine-tuning DINOv2 Small — RSNA Knee
+# EXP-011 — DINOv2 Small Fine-Tuning + atención multivista (MIL)
 
-Objetivo: investigar si entrenar las últimas dos capas de DINOv2 sobre 4,349 estudios con weak labels mejora el resultado público de EXP-009 (0.762). **No existe garantía de 0.800.** No se copia el código de otros competidores; recursos externos se acreditan en `REFERENCES.md`.
+**Estado final: submission oficial enviada y evaluada exitosamente. Public Score: `0.808` (20/oct/2026).** Este archivo registra el método, los comandos empleados y los resultados, pero **no es necesario volver a ejecutar el notebook**.
 
-## Instalación local
+## Método
 
-1. Extrae la carpeta ZIP desde la raíz `C:\Users\Admin\Documents\RSNA_Knee_2026`, conservando las rutas internas.
-2. Activa el entorno: `.\.venv\Scripts\Activate.ps1`.
-3. Genera el notebook de forma local, sin usar GPU: `python build_exp011_notebook.py`.
-4. Verifica sintaxis: `python -m py_compile .\src\exp011_finetune_dinov2.py .\build_exp011_notebook.py`.
-5. Comprueba la carpeta `notebooks/exp011_finetune_dinov2/` y los dos archivos.
-6. Guarda el código en GitHub para trazabilidad con `git add src/exp011_finetune_dinov2.py build_exp011_notebook.py INSTRUCCIONES_EXP011.md notebooks/exp011_finetune_dinov2/`, `git commit -m "Prepare EXP-011 DINOv2 fine-tuning"`, `git push origin main`.
+- 4,349 estudios weak provenientes de `llm_labels_v4_blend.csv`, con separación de holdout ~13% para elegir época.
+- 58 estudios gold para validación final local, sin entrenar la red ni seleccionar época con ellos.
+- Hasta 2 series por plano (`sagittal`, `coronal`, `axial`) y 2 posiciones por serie; tres slices vecinos concatenados en canales RGB (12 vistas por rodilla).
+- Recorte físico central de aproximadamente 140 mm (según `PixelSpacing`) y resolución 224 × 224.
+- Meta DINOv2 Small: entrenamiento de **los últimos dos bloques transformer**, resto del backbone congelado.
+- Atención MIL sobre las vistas + cabeza predictiva multietiqueta para 12 anomalías. Guardado del mejor checkpoint según weak holdout como `exp011_best.pt`.
 
-## Primera ejecución en Kaggle
+## Preparación desde VS Code (PowerShell)
 
-**ATENCIÓN: este comando inicia inmediatamente el cálculo en Kaggle.**
+```powershell
+cd "C:\Users\Admin\Documents\RSNA_Knee_2026"
+.\.venv\Scripts\Activate.ps1
+python build_exp011_notebook.py
+python -m py_compile .\src\exp011_finetune_dinov2.py .\build_exp011_notebook.py
+```
 
-`kaggle kernels push -p ".\notebooks\exp011_finetune_dinov2"`
+Esto genera o verifica `notebooks/exp011_finetune_dinov2/rsna-exp011-finetune-dinov2.ipynb` y `kernel-metadata.json`. Generar el notebook **no** inicia entrenamiento.
 
-Confirma que el notebook tiene GPU T4 y los tres inputs. El código construye un caché de ~7.9 GB de ventanas RGB de las imágenes, para no decodificar los DICOM en cada época. Si Kaggle carece de espacio temporal, fallará claramente; **no modifiques EXP-009**. El clasificador usa MIL con atención, ajuste fino de 2 bloques y weak holdout (13%).
+## Reproducción de la ejecución Kaggle — opcional, consume GPU
 
-El tiempo de extracción puede rondar 2–3 horas; entrenamiento 1–4 horas e inferencia escondida otros ~30–90 minutos. El rango real depende de Kaggle y **podría superar los límites**. El código incluye límites de tiempo y aborta si no puede evaluar todas las imágenes; nunca pone 0.5 silenciosamente para pacientes no procesados.
+```powershell
+kaggle kernels push -p ".\notebooks\exp011_finetune_dinov2"
+kaggle kernels status jerorojasalvarado/rsna-exp011-finetune-dinov2
+```
 
-Revisa los logs finales:
+`kaggle kernels push` inicia una **versión nueva** y ejecución nueva; **no usarlo para el cierre documental**. El notebook requiere el input de la competencia, el modelo Meta DINOv2 Small y el dataset auxiliar de etiquetas, con GPU T4 e Internet desactivado.
 
-- `BEST WEAK AUC ... epoch ...`
-- `EXP011 GOLD MACRO AUC: ...`
-- `EXP011 LOCAL GATE (>=0.820 gold, >=0.70 weak holdout): PASS/FAIL`
-- `EXP011 COMPLETE ...`
+[Notebook en Kaggle](https://www.kaggle.com/code/jerorojasalvarado/rsna-exp011-finetune-dinov2)
 
-Si la ejecución falla, comparte la primera línea de `Traceback` más el error. **No envíes a la competencia aunque diga PASS sin verificar en conjunto**. Si FAIL, no gastar submission.
+## Validación local real (primera ejecución, 19-20/oct/2026)
 
-EXP-011 crea `submission.csv` y `exp011_diagnostics.json` en `/kaggle/working/`. No es necesario conservar ni subir los datos temporales (los archivos de caché van a `/kaggle/temp`). El score público anterior 0.762 de EXP-009 queda como referencia.
+| Medida | Resultado |
+|---|---:|
+| Estudios weak | 4,349 |
+| Estudios gold | 58 |
+| Mejor época | **4** |
+| **AUC holdout weak** | **0.7778** |
+| **Macro AUC gold** | **0.7811** |
+| Duración del entrenamiento/evaluación visible | ~**2.20 horas** |
+| Filtro predefinido gold `>= 0.820` | **FAIL** |
 
-**Plazo oficial:** 22 octubre 2026, 23:59 UTC (17:59 hora Guadalajara). Kaggle limita GPU submissions a nueve horas y requiere Internet OFF.
+El filtro era una heurística conservadora para decidir si recomendar el envío, **no una medida estadística de garantía**. EXP-011 no alcanzó `0.820` gold local, pero el participante decidió enviarlo posteriormente a competición para obtener una evaluación oficial.
+
+Los detalles numéricos y la métrica por cada una de las 12 anomalías están en [`experiments/results/exp011_diagnostics.json`](experiments/results/exp011_diagnostics.json).
+
+## Resultado oficial de Kaggle (20/oct/2026)
+
+- Notebook: **`RSNA_EXP011_FineTune_DINOv2`**.
+- Versión: **1**.
+- Estado: **Succeeded**.
+- **Public Score: `0.808`**, confirmado en **Submissions**.
+- EXP-009 anterior: `0.762`. Ganancia: `+0.046`.
+- Objetivo: Public Score `>= 0.800`, **alcanzado**.
+- Evidencia visual: [`docs/evidencia/exp011_public_score_0_808.png`](docs/evidencia/exp011_public_score_0_808.png).
+
+**Advertencia:** el resultado `0.808` es público y no prueba que el Private Score futuro sea igual. El `submission.csv` producido por la primera ejecución visible tenía tres estudios; la evaluación oficial hizo un rerun privado sobre test oculto. Por eso no se debe intentar subir manualmente el CSV de tres filas.
+
+## Conservación del modelo y reproducibilidad
+
+El notebook escribió `exp011_best.pt` (checkpoint ~89 MB). Se mantiene como archivo descargado o output de Kaggle; por su tamaño y porque el repositorio conserva el código original y sus inputs, **no se incluye por defecto en GitHub**. Tampoco se suben DICOM ni credenciales. Las referencias y licencias de terceros se consultan en [`REFERENCES.md`](REFERENCES.md).
